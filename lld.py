@@ -46,7 +46,7 @@ class Lld:
     @staticmethod
     def format_string(raw_string):
         replacement_dict = {u'Ä': 'Ae', u'Ö': 'Oe', u'Ü': 'Ue', u'ä': 'ae', u'ö': 'oe', u'ü': 'ue', ':': ' -'}
-        invalid_chars = r'[^A-Za-z0-9\-\.]+'
+        invalid_chars = r'[^A-Za-z0-9\-\.\+\#]+'
         u_map = {ord(key): unicode(val) for key, val in replacement_dict.items()}
         raw_string = raw_string.translate(u_map)
         raw_string = re.sub(invalid_chars, ' ', raw_string).strip().encode('utf-8')
