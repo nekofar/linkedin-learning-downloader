@@ -13,14 +13,14 @@ Features:
 
 ### How to use
 First install the requirements:
-```
+```shell
 pip install -r requirements.txt
 ```
 The `config.py` looks like this:
-```
+```python
 USERNAME = 'user@email.com'
 PASSWORD = 'password'
-BASE_DOWNLOAD_PATH = 'E:/Downloads/LinkedInLearning' #use "/" as separators
+BASE_DOWNLOAD_PATH = '~/Downloads/LinkedInLearning' #use "/" as separators
 SUBS = True
 COURSES = [
     'it-security-foundations-core-concepts',
@@ -34,14 +34,10 @@ COURSES = [
 `https://www.linkedin.com/learning/it-security-foundations-core-concepts/ -> it-security-foundations-core-concepts`
 
 Then execute the script:
-```
+```shell
 python lld.py
 ```
 The courses will be saved in your defined download folder.
 
-### Demo (outdated by now)
-[![asciicast](https://asciinema.org/a/143894.png)](https://asciinema.org/a/143894)
-
 ---
 ###### Have Fun & Feel Free to report any issues
----
