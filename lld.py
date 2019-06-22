@@ -13,7 +13,7 @@ import logging
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-login_url = 'https://www.linkedin.com/'
+login_url = 'https://www.linkedin.com/login'
 post_login_url = 'https://www.linkedin.com/uas/login-submit'
 course_api_url = 'https://www.linkedin.com/learning-api/detailedCourses??fields=fullCourseUnlocked,releasedOn,' \
           'exerciseFileUrls,exerciseFiles&addParagraphsToTranscript=true&courseSlug=%s&q=slugs'
@@ -101,7 +101,7 @@ class Lld:
     def get_logged_session(self):
         logging.info('Authenticating to LinkedIn')
         login_page = BeautifulSoup(self.session.get(login_url).text, 'html.parser')
-        csrf = login_page.find(id='loginCsrfParam-login')['value']
+        csrf = login_page.find('input', {'name':'loginCsrfParam'})['value']
         logging.info('Csfr token: %s' % csrf)
         login_data = urllib.urlencode(
             {'session_key': config.USERNAME, 'session_password': config.PASSWORD, 'isJsEnabled': 'false',
