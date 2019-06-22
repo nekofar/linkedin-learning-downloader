@@ -99,10 +99,10 @@ class Lld:
             f.write('%s\n\n%s' % (desc, course_url))
 
     def get_logged_session(self):
-        logging.info('Authenticating to LinkedIn')
+        logging.info('[*] Authenticating to LinkedIn')
         login_page = BeautifulSoup(self.session.get(login_url).text, 'html.parser')
         csrf = login_page.find('input', {'name':'loginCsrfParam'})['value']
-        logging.info('Csfr token: %s' % csrf)
+        logging.info('[*] Csfr token: %s' % csrf)
         login_data = urllib.urlencode(
             {'session_key': config.USERNAME, 'session_password': config.PASSWORD, 'isJsEnabled': 'false',
              'loginCsrfParam': csrf})
@@ -110,9 +110,9 @@ class Lld:
         self.session.headers.update(headers)
         resp = self.session.post(post_login_url, data=login_data, allow_redirects=True)
         if resp.status_code != 200:
-            logging.error('Could not authenticate to LinkedIn')
+            logging.error('[!] Could not authenticate to LinkedIn')
         else:
-            logging.info('Authentication successfully completed')
+            logging.info('[*] Authentication successfully completed')
 
     def download_courses(self):
         token = self.session.cookies.get('JSESSIONID').replace('"', '')
@@ -124,46 +124,46 @@ class Lld:
             resp = self.session.get(course_api_url % course)
             course_data = resp.json()['elements'][0]
             course_name = self.format_string(course_data['title'])
-            logging.info('Starting download of course [%s]...' % course_name)
+            logging.info('[*] Starting download of course [%s]...' % course_name)
             course_path = '%s/%s' % (self.base_path, course_name)
             chapters_list = course_data['chapters']
             chapter_index = 1
-            logging.info('Parsing course\'s chapters...')
-            logging.info('%d chapters found' % len(chapters_list))
+            logging.info('[*] Parsing course\'s chapters...')
+            logging.info('[*] %d chapters found' % len(chapters_list))
             for chapter in chapters_list:
                 chapter_name = self.format_string(chapter['title'])
-                logging.info('Starting download of chapter [%s]...' % chapter_name)
+                logging.info('[*] --- Starting download of chapter [%s]...' % chapter_name)
                 chapter_path = '%s/%s - %s' % (course_path, str(chapter_index).zfill(2), chapter_name)
                 if chapter_name == '':
                     chapter_path = chapter_path[:-3]
                 videos_list = chapter['videos']
                 video_index = 1
-                logging.info('Parsing chapters\'s videos')
-                logging.info('%d videos found' % len(videos_list))
+                logging.info('[*] --- Parsing chapters\'s videos')
+                logging.info('[*] --- %d videos found' % len(videos_list))
                 for video in videos_list:
                     video_name = self.format_string(video['title'])
                     video_slug = video['slug']
                     video_data = (self.session.get(video_api_url % (course, video_slug)))
                     video_path = chapter_path + '/' + '%s - %s.mp4' % (str(video_index).zfill(2), video_name);
                     if os.path.exists(video_path):
-                        logging.info('Skip video [%s] download because it already exists.' % video_name)
+                        logging.info('[*] ------ Skip video [%s] download because it already exists.' % video_name)
                         video_index += 1
                         continue
                     try:
                         video_url = re.search('"progressiveUrl":"(.+)","streamingUrl"', video_data.text).group(1)
                     except:
-                        logging.error('Can\'t download the video [%s], probably is only for premium users' % video_name)
+                        logging.error('[!] ------ Can\'t download the video [%s], probably is only for premium users' % video_name)
                         continue
-                    logging.info('Downloading video [%s]' % video_name)
+                    logging.info('[*] ------ Downloading video [%s]' % video_name)
                     self.download_file(video_url, chapter_path, '%s - %s.mp4' % (str(video_index).zfill(2), video_name))
                     video_data = video_data.json()['elements'][0]
                     if config.SUBS:
                         try:
                             subs = video_data['selectedVideo']['transcript']['lines']
                         except KeyError:
-                            logging.info('No subtitles avaible')
+                            logging.info('[*] ------ No subtitles avaible')
                         else:
-                            logging.info('Downloading subtitles')
+                            logging.info('[*] ------ Downloading subtitles')
                             self.download_sub(subs, chapter_path, '%s - %s.srt' % (str(video_index).zfill(2), video_name))
                     video_index += 1
                 chapter_index += 1
@@ -174,11 +174,11 @@ class Lld:
                     ex_name = exercise['name']
                     ex_url = exercise['url']
                 except (KeyError, IndexError):
-                    logging.info('Can\'t download an exercise file for course [%s]' % course_name)
+                    logging.info('[!] --- Can\'t download an exercise file for course [%s]' % course_name)
                 else:
                      self.download_file(ex_url, course_path, ex_name)
             description = course_data['description']
-            logging.info('Downloading course description')
+            logging.info('[*] --- Downloading course description')
             self.download_desc(description, 'https://www.linkedin.com/learning/%s' % course, course_path, 'Description.txt')
 
 
