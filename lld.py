@@ -13,7 +13,7 @@ import logging
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-login_url = 'https://www.linkedin.com/'
+login_url = 'https://www.linkedin.com/login'
 post_login_url = 'https://www.linkedin.com/uas/login-submit'
 course_api_url = 'https://www.linkedin.com/learning-api/detailedCourses??fields=fullCourseUnlocked,releasedOn,' \
           'exerciseFileUrls,exerciseFiles&addParagraphsToTranscript=true&courseSlug=%s&q=slugs'
@@ -46,7 +46,7 @@ class Lld:
     @staticmethod
     def format_string(raw_string):
         replacement_dict = {u'Ä': 'Ae', u'Ö': 'Oe', u'Ü': 'Ue', u'ä': 'ae', u'ö': 'oe', u'ü': 'ue', ':': ' -'}
-        invalid_chars = r'[^A-Za-z0-9\-\.]+'
+        invalid_chars = r'[^A-Za-z0-9\-\.\+\#]+'
         u_map = {ord(key): unicode(val) for key, val in replacement_dict.items()}
         raw_string = raw_string.translate(u_map)
         raw_string = re.sub(invalid_chars, ' ', raw_string).strip().encode('utf-8')
@@ -101,7 +101,7 @@ class Lld:
     def get_logged_session(self):
         logging.info('Authenticating to LinkedIn')
         login_page = BeautifulSoup(self.session.get(login_url).text, 'html.parser')
-        csrf = login_page.find(id='loginCsrfParam-login')['value']
+        csrf = login_page.find('input', {'name':'loginCsrfParam'})['value']
         logging.info('Csfr token: %s' % csrf)
         login_data = urllib.urlencode(
             {'session_key': config.USERNAME, 'session_password': config.PASSWORD, 'isJsEnabled': 'false',
@@ -144,6 +144,11 @@ class Lld:
                     video_name = self.format_string(video['title'])
                     video_slug = video['slug']
                     video_data = (self.session.get(video_api_url % (course, video_slug)))
+                    video_path = chapter_path + '/' + '%s - %s.mp4' % (str(video_index).zfill(2), video_name);
+                    if os.path.exists(video_path):
+                        logging.info('Skip video [%s] download because it already exists.' % video_name)
+                        video_index += 1
+                        continue
                     try:
                         video_url = re.search('"progressiveUrl":"(.+)","streamingUrl"', video_data.text).group(1)
                     except:
