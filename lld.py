@@ -16,9 +16,9 @@ reload(sys)
 login_url = 'https://www.linkedin.com/login'
 post_login_url = 'https://www.linkedin.com/uas/login-submit'
 course_api_url = 'https://www.linkedin.com/learning-api/detailedCourses??fields=fullCourseUnlocked,releasedOn,' \
-                 'exerciseFileUrls,exerciseFiles&addParagraphsToTranscript=true&courseSlug=%s&q=slugs'
-video_api_url = 'https://www.linkedin.com/learning-api/detailedCourses?addParagraphsToTranscript=false&courseSlug=%s' \
-                '&q=slugs&resolution=_720&videoSlug=%s'
+                 'exerciseFileUrls,exerciseFiles&addParagraphsToTranscript=true&courseSlug={}&q=slugs'
+video_api_url = 'https://www.linkedin.com/learning-api/detailedCourses?addParagraphsToTranscript=false&courseSlug={}' \
+                '&q=slugs&resolution=_720&videoSlug={}'
 headers = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
     'Accept-Encoding': 'gzip, deflate, br',
@@ -64,9 +64,9 @@ class Lld:
     @staticmethod
     def format_time(ms):
         seconds, milliseconds = divmod(ms, 1000)
-        minitues, seconds = divmod(seconds, 60)
-        hours, minitues = divmod(minitues, 60)
-        return '%d:%02d:%02d,%02d' % (hours, minitues, seconds, milliseconds)
+        minutes, seconds = divmod(seconds, 60)
+        hours, minutes = divmod(minutes, 60)
+        return '{:d}:{:2d}:{:2d},{:2d}'.format(hours, minutes, seconds, milliseconds)
 
     @staticmethod
     def print_log(color, data):
@@ -109,9 +109,9 @@ class Lld:
                 else:
                     t_end = subs[i]['transcriptStartAt']
                 caption = sub['caption']
-                f.write('%s\n' % str(i))
-                f.write('%s --> %s\n' % (self.format_time(t_start), self.format_time(t_end)))
-                f.write('%s\n\n' % caption)
+                f.write('{}\n'.format(str(i)))
+                f.write('{} --> {}\n'.format(self.format_time(t_start), self.format_time(t_end)))
+                f.write('{}\n\n'.format(caption))
                 i += 1
 
     @staticmethod
@@ -125,7 +125,7 @@ class Lld:
         self.print_log('cyan', '[*] Authenticating to LinkedIn')
         login_page = BeautifulSoup(self.session.get(login_url).text, 'html.parser')
         csrf = login_page.find('input', {'name': 'loginCsrfParam'})['value']
-        self.print_log('cyan', '[*] Csfr token: %s' % csrf)
+        self.print_log('cyan', '[*] Csfr token: {}'.format(csrf))
         login_data = urllib.urlencode(
             {'session_key': config.USERNAME, 'session_password': config.PASSWORD, 'isJsEnabled': 'false',
              'loginCsrfParam': csrf})
@@ -144,43 +144,43 @@ class Lld:
         self.session.headers.pop('Accept')
 
         for course in config.COURSES:
-            resp = self.session.get(course_api_url % course)
+            resp = self.session.get(course_api_url.format(course))
             course_data = resp.json()['elements'][0]
             course_name = self.format_string(course_data['title'])
-            self.print_log('yellow', '[*] Starting download of course [%s]...' % course_name)
-            course_path = '%s/%s' % (self.base_path, course_name)
+            self.print_log('yellow', '[*] Starting download of course [{}]...'.format(course_name))
+            course_path = '{}/{}'.format(self.base_path, course_name)
             chapters_list = course_data['chapters']
             chapter_index = 1
             self.print_log('yellow', '[*] Parsing course\'s chapters...')
-            self.print_log('yellow', '[*] %d chapters found' % len(chapters_list))
+            self.print_log('yellow', '[*] {:d} chapters found'.format(len(chapters_list)))
             for chapter in chapters_list:
                 chapter_name = self.format_string(chapter['title'])
-                self.print_log('green', '[*] --- Starting download of chapter [%s]...' % chapter_name)
-                chapter_path = '%s/%s - %s' % (course_path, str(chapter_index).zfill(2), chapter_name)
+                self.print_log('green', '[*] --- Starting download of chapter [{}]...'.format(chapter_name))
+                chapter_path = '{}/{} - {}'.format(course_path, str(chapter_index).zfill(2), chapter_name)
                 if chapter_name == '':
                     chapter_path = chapter_path[:-3]
                 videos_list = chapter['videos']
                 video_index = 1
                 self.print_log('green', '[*] --- Parsing chapters\'s videos')
-                self.print_log('green', '[*] --- %d videos found' % len(videos_list))
+                self.print_log('green', '[*] --- {:d} videos found'.format(len(videos_list)))
                 for video in videos_list:
                     video_name = self.format_string(video['title'])
                     video_slug = video['slug']
-                    video_path = chapter_path + '/' + '%s - %s.mp4' % (str(video_index).zfill(2), video_name)
+                    video_path = chapter_path + '/' + '{} - {}.mp4'.format(str(video_index).zfill(2), video_name)
                     if os.path.exists(video_path):
-                        self.print_log('blue', '[*] ------ Skip video [%s] download '
-                                               'because it already exists.' % video_name)
+                        self.print_log('blue', '[*] ------ Skip video [{}] download '
+                                               'because it already exists.'.format(video_name))
                         video_index += 1
                         continue
-                    video_data = (self.session.get(video_api_url % (course, video_slug)))
+                    video_data = (self.session.get(video_api_url.format(course, video_slug)))
                     try:
                         video_url = re.search('"progressiveUrl":"(.+)","streamingUrl"', video_data.text).group(1)
                     except AttributeError:
-                        self.print_log('red', '[!] ------ Can\'t download the video [%s], '
-                                              'probably is only for premium users' % video_name)
+                        self.print_log('red', '[!] ------ Can\'t download the video [{}], '
+                                              'probably is only for premium users'.format(video_name))
                         continue
-                    self.print_log('magenta', '[*] ------ Downloading video [%s]' % video_name)
-                    self.download_file(video_url, chapter_path, '%s - %s.mp4' % (str(video_index).zfill(2), video_name))
+                    self.print_log('magenta', '[*] ------ Downloading video [{}]'.format(video_name))
+                    self.download_file(video_url, chapter_path, '{} - {}.mp4'.format(str(video_index).zfill(2), video_name))
                     video_data = video_data.json()['elements'][0]
                     if config.SUBS:
                         try:
@@ -189,8 +189,8 @@ class Lld:
                             self.print_log('gray', '[*] ------ No subtitles available')
                         else:
                             self.print_log('magenta', '[*] ------ Downloading subtitles')
-                            self.download_sub(subs, chapter_path, '%s - %s.srt'
-                                              % (str(video_index).zfill(2), video_name))
+                            self.download_sub(subs, chapter_path, '{} - {}.srt'
+                                              .format(str(video_index).zfill(2), video_name))
                     video_index += 1
                 chapter_index += 1
 
@@ -203,7 +203,7 @@ class Lld:
                         ex_url = exercise['url']
                     except (KeyError, IndexError):
                         self.print_log('default', '[!] --- Can\'t download an exercise file '
-                                                  'for course [%s]' % course_name)
+                                                  'for course [{}]'.format(course_name))
                     else:
                         self.download_file(ex_url, course_path, ex_name)
             else:
@@ -211,7 +211,7 @@ class Lld:
 
             description = course_data['description']
             self.print_log('green', '[*] --- Downloading course description')
-            self.download_desc(description, 'https://www.linkedin.com/learning/%s' % course, course_path,
+            self.download_desc(description, 'https://www.linkedin.com/learning/{}'.format(course), course_path,
                                'Description.txt')
 
 
