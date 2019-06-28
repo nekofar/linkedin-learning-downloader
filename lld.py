@@ -1,36 +1,40 @@
 # -*- coding: utf-8 -*-
-import requests
-from requests import Session
-from bs4 import BeautifulSoup
+
 import urllib
 import sys
 import re
 import os
 import string
-import config
 import datetime
+import requests
+from requests import Session
+from bs4 import BeautifulSoup
 from tqdm import tqdm
+import config
 
 reload(sys)
 
 login_url = "https://www.linkedin.com/login"
 post_login_url = "https://www.linkedin.com/uas/login-submit"
 course_api_url = (
-    "https://www.linkedin.com/learning-api/detailedCourses??fields=fullCourseUnlocked,releasedOn,"
+    "https://www.linkedin.com/learning-api/detailedCourses"
+    "??fields=fullCourseUnlocked,releasedOn,"
     "exerciseFileUrls,exerciseFiles&addParagraphsToTranscript=true&courseSlug={}&q=slugs"
 )
 video_api_url = (
-    "https://www.linkedin.com/learning-api/detailedCourses?addParagraphsToTranscript=false&courseSlug={}"
+    "https://www.linkedin.com/learning-api/detailedCourses"
+    "?addParagraphsToTranscript=false&courseSlug={}"
     "&q=slugs&resolution=_720&videoSlug={}"
 )
 headers = {
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
+    "image/webp,image/apng,*/*;q=0.8",
     "Accept-Encoding": "gzip, deflate, br",
     "Accept-Language": "en-US,en;q=0.9",
     "Connection": "keep-alive",
     "Content-Type": "application/x-www-form-urlencoded",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/66.0.3359.181 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    " (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36",
 }
 
 colors = {
@@ -47,7 +51,7 @@ colors = {
 }
 
 
-class Lld:
+class Lld(object):
     def __init__(self):
         self.session = Session()
         self.base_path = (
@@ -56,13 +60,23 @@ class Lld:
 
     @staticmethod
     def plain_cookies(cookies):
+        """
+
+        :param cookies:
+        :return:
+        """
         plain = ""
-        for k, v in cookies.iteritems():
-            plain += k + "=" + v + "; "
+        for key, value in cookies.iteritems():
+            plain += key + "=" + value + "; "
         return plain[:-2]
 
     @staticmethod
     def format_string(raw_string):
+        """
+
+        :param raw_string:
+        :return:
+        """
         replacement_dict = {
             u"Ä": "Ae",
             u"Ö": "Oe",
@@ -77,14 +91,19 @@ class Lld:
         raw_string = raw_string.translate(u_map)
         raw_string = re.sub(invalid_chars, " ", raw_string).strip().encode("utf-8")
         i = 0
-        for c in raw_string:
-            if c in string.ascii_letters:
+        for char in raw_string:
+            if char in string.ascii_letters:
                 break
             i += 1
         return raw_string[i:]
 
     @staticmethod
     def format_time(ms):
+        """
+
+        :param ms:
+        :return:
+        """
         seconds, milliseconds = divmod(ms, 1000)
         minutes, seconds = divmod(seconds, 60)
         hours, minutes = divmod(minutes, 60)
@@ -92,11 +111,26 @@ class Lld:
 
     @staticmethod
     def print_log(color, data):
-        print "[" + datetime.datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        ) + "]" + colors[color] + str(data) + colors["default"]
+        """
+        Print out customized log
+
+        :param color:
+        :param data:
+        """
+        print "[{}] {}{}{}".format(
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            colors[color],
+            str(data),
+            colors["default"],
+        )
 
     def download_file(self, url, path, file_name):
+        """
+
+        :param url:
+        :param path:
+        :param file_name:
+        """
         if "".join(file_name.split(".")[1:]) == "mp4":
             color = "magenta"
             indent = "-" * 6
@@ -105,18 +139,20 @@ class Lld:
             indent = "-" * 3
         resp = self.session.get(url, stream=True)
         total = int(resp.headers["Content-Length"])
-        date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        barf = "{desc}: {percentage:2.0f}% | {elapsed}, {rate_fmt}" + colors["default"]
-        desc = "[{}]{}[*] {} {} {:0.2f}Mb".format(
-            date, colors[color], indent, "Downloading", total / 1e6
-        )
         if not os.path.exists(path):
             os.makedirs(path)
         try:
-            with open(path + "/" + file_name, "wb") as f:
+            with open(path + "/" + file_name, "wb") as file_object:
                 with tqdm(
-                    desc=desc,
-                    bar_format=barf,
+                    desc="[{}]{}[*] {} {} {:0.2f}Mb".format(
+                        datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        colors[color],
+                        indent,
+                        "Downloading",
+                        total / 1e6,
+                    ),
+                    bar_format="{desc}: {percentage:2.0f}% | {elapsed}, {rate_fmt}"
+                    + colors["default"],
                     total=total,
                     ncols=100,
                     leave=False,
@@ -126,14 +162,20 @@ class Lld:
                 ) as progress:
                     for chunk in resp.iter_content(chunk_size=1024):
                         if chunk:
-                            f.write(chunk)
+                            file_object.write(chunk)
                             progress.update(1024)
-        except Exception as e:
+        except Exception as err:
             os.remove(path + "/" + file_name)
-            self.print_log("red", e)
+            self.print_log("red", err)
 
     def download_sub(self, subs, path, file_name):
-        with open(path + "/" + file_name, "a") as f:
+        """
+
+        :param subs:
+        :param path:
+        :param file_name:
+        """
+        with open(path + "/" + file_name, "a") as file_object:
             i = 1
             for sub in subs:
                 t_start = sub["transcriptStartAt"]
@@ -142,23 +184,33 @@ class Lld:
                 else:
                     t_end = subs[i]["transcriptStartAt"]
                 caption = sub["caption"]
-                f.write("{}\n".format(str(i)))
-                f.write(
+                file_object.write("{}\n".format(str(i)))
+                file_object.write(
                     "{} --> {}\n".format(
                         self.format_time(t_start), self.format_time(t_end)
                     )
                 )
-                f.write("{}\n\n".format(caption))
+                file_object.write("{}\n\n".format(caption))
                 i += 1
 
     @staticmethod
     def download_desc(desc, course_url, path, file_name):
+        """
+
+        :param desc:
+        :param course_url:
+        :param path:
+        :param file_name:
+        """
         if not os.path.exists(path):
             os.makedirs(path)
-        with open(path + "/" + file_name, "a") as f:
-            f.write(u"{}\n\n{}".format(desc, course_url).encode("utf8"))
+        with open(path + "/" + file_name, "a") as file_object:
+            file_object.write(u"{}\n\n{}".format(desc, course_url).encode("utf8"))
 
     def get_logged_session(self):
+        """
+        Login to the LinkedIn using login data and initialize session
+        """
         self.print_log("cyan", "[*] Authenticating to LinkedIn")
         login_page = BeautifulSoup(self.session.get(login_url).text, "html.parser")
         csrf = login_page.find("input", {"name": "loginCsrfParam"})["value"]
@@ -182,6 +234,9 @@ class Lld:
             self.print_log("cyan", "[*] Authentication successfully completed")
 
     def download_courses(self):
+        """
+        Download courses videos and files
+        """
         token = self.session.cookies.get("JSESSIONID").replace('"', "")
         self.session.headers["Csrf-Token"] = token
         self.session.headers["Cookie"] = self.plain_cookies(
@@ -308,6 +363,9 @@ class Lld:
 
 
 def main():
+    """
+
+    """
     lld = Lld()
     lld.get_logged_session()
     lld.download_courses()
