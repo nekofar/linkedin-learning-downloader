@@ -133,7 +133,7 @@ class Lld:
             resp = self.session.get(course_api_url % course)
             course_data = resp.json()['elements'][0]
             course_name = self.format_string(course_data['title'])
-            self.print_log('yellow', '\033[33m[*] Starting download of course [%s]...\033[0m' % course_name)
+            self.print_log('yellow', '[*] Starting download of course [%s]...' % course_name)
             course_path = '%s/%s' % (self.base_path, course_name)
             chapters_list = course_data['chapters']
             chapter_index = 1
@@ -185,14 +185,15 @@ class Lld:
                 self.print_log('gray', '[*] --- No exercise files available')
             else:
                 self.print_log('green', '[*] --- Downloading exercise files')
-            for exercise in exercises_list:
-                try:
-                    ex_name = exercise['name']
-                    ex_url = exercise['url']
-                except (KeyError, IndexError):
-                    self.print_log('default', '[!] --- Can\'t download an exercise file for course [%s]' % course_name)
-                else:
-                    self.download_file(ex_url, course_path, ex_name)
+                for exercise in exercises_list:
+                    try:
+                        ex_name = exercise['name']
+                        ex_url = exercise['url']
+                    except (KeyError, IndexError):
+                        self.print_log('default', '[!] --- Can\'t download an exercise file '
+                                       'for course [%s]' % course_name)
+                    else:
+                        self.download_file(ex_url, course_path, ex_name)
             description = course_data['description']
             self.print_log('green', '[*] --- Downloading course description')
             self.download_desc(description, 'https://www.linkedin.com/learning/%s' % course, course_path,
