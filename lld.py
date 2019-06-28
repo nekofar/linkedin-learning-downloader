@@ -168,6 +168,7 @@ class Lld:
                     video_index += 1
                 chapter_index += 1
 
+            logging.info('[*] --- Downloading exercise files')
             exercises_list = course_data['exerciseFiles']
             for exercise in exercises_list:
                 try:
