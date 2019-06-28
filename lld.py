@@ -119,7 +119,7 @@ class Lld:
         if not os.path.exists(path):
             os.makedirs(path)
         with open(path + '/' + file_name, 'a') as f:
-            f.write('%s\n\n%s' % (desc, course_url))
+            f.write(u'{}\n\n{}'.format(desc, course_url).encode('utf8'))
 
     def get_logged_session(self):
         self.print_log('cyan', '[*] Authenticating to LinkedIn')
