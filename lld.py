@@ -9,6 +9,7 @@ import os
 import string
 import config
 import datetime
+from tqdm import tqdm
 
 reload(sys)
 
@@ -73,14 +74,27 @@ class Lld:
               colors[color] + str(data) + colors['default']
 
     def download_file(self, url, path, file_name):
+        if ''.join(file_name.split('.')[1:]) == 'mp4':
+            color = 'magenta'
+            indent = '-' * 6
+        else:
+            color = 'green'
+            indent = '-' * 3
         resp = self.session.get(url, stream=True)
+        total = int(resp.headers["Content-Length"])
+        date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        barf = '{desc}: {percentage:2.0f}% | {elapsed}, {rate_fmt}' + colors['default']
+        desc = "[{}]{}[*] {} {} {:0.2f}Mb".format(date, colors[color], indent, 'Downloading', total / 1e6)
         if not os.path.exists(path):
             os.makedirs(path)
         try:
             with open(path + '/' + file_name, 'wb') as f:
-                for chunk in resp.iter_content(chunk_size=1024):
-                    if chunk:
-                        f.write(chunk)
+                with tqdm(desc=desc, bar_format=barf, total=total, ncols=100, leave=False,
+                          unit="b", unit_scale=True, unit_divisor=1e6) as progress:
+                    for chunk in resp.iter_content(chunk_size=1024):
+                        if chunk:
+                            f.write(chunk)
+                            progress.update(1024)
         except Exception as e:
             os.remove(path + '/' + file_name)
             self.print_log('red', e)
@@ -154,7 +168,7 @@ class Lld:
                     video_slug = video['slug']
                     video_path = chapter_path + '/' + '%s - %s.mp4' % (str(video_index).zfill(2), video_name)
                     if os.path.exists(video_path):
-                        self.print_log('gray', '[*] ------ Skip video [%s] download '
+                        self.print_log('blue', '[*] ------ Skip video [%s] download '
                                                'because it already exists.' % video_name)
                         video_index += 1
                         continue
@@ -182,8 +196,6 @@ class Lld:
 
             exercises_list = course_data['exerciseFiles']
             if exercises_list:
-                self.print_log('gray', '[*] --- No exercise files available')
-            else:
                 self.print_log('green', '[*] --- Downloading exercise files')
                 for exercise in exercises_list:
                     try:
@@ -191,9 +203,12 @@ class Lld:
                         ex_url = exercise['url']
                     except (KeyError, IndexError):
                         self.print_log('default', '[!] --- Can\'t download an exercise file '
-                                       'for course [%s]' % course_name)
+                                                  'for course [%s]' % course_name)
                     else:
                         self.download_file(ex_url, course_path, ex_name)
+            else:
+                self.print_log('gray', '[*] --- No exercise files available')
+
             description = course_data['description']
             self.print_log('green', '[*] --- Downloading course description')
             self.download_desc(description, 'https://www.linkedin.com/learning/%s' % course, course_path,
