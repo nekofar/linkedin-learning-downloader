@@ -117,7 +117,7 @@ class Lld(object):
         :param color:
         :param data:
         """
-        print "[{}] {}{}{}".format(
+        print "[{}]{}{}{}".format(
             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             colors[color],
             str(data),
