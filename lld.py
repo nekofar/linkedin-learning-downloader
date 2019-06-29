@@ -212,6 +212,23 @@ class Lld(object):
         with open(path + "/" + file_name, "a") as file_object:
             file_object.write(u"{}\n\n{}".format(desc, course_url).encode("utf8"))
 
+    def download_cover(self, thumbnail, path, file_name):
+        """
+        Download course description
+
+        :param thumbnail:
+        :param path:
+        :param file_name:
+        """
+        if not os.path.exists(path):
+            os.makedirs(path)
+        cover_path = path + "/" + file_name
+        resp = self.session.get(thumbnail, stream=True)
+        if resp.status_code == 200:
+            with open(cover_path, 'wb') as file_object:
+                for chunk in resp:
+                    file_object.write(chunk)
+
     def get_logged_session(self):
         """
         Login to the LinkedIn using login data and initialize session
@@ -273,6 +290,10 @@ class Lld(object):
         for chapter in chapters_list:
             self.download_chapter(course, chapter, course_path, chapter_index)
             chapter_index += 1
+
+        thumbnail = course_data['webThumbnail']
+        self.print_log("green", "[*] --- Downloading course cover")
+        self.download_cover(thumbnail, course_path, 'Cover.jpg')
 
         exercises_list = course_data["exerciseFiles"]
         self.print_log("green", "[*] --- Downloading exercise files")
