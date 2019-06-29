@@ -190,9 +190,9 @@ class Lld(object):
                 caption = sub["caption"]
                 file_object.write("{}\n".format(str(i)))
                 file_object.write(
-                    "{} --> {}\n".format(
+                    u"{} --> {}\n".format(
                         self.format_time(t_start), self.format_time(t_end)
-                    )
+                    ).encode('utf8')
                 )
                 file_object.write("{}\n\n".format(caption))
                 i += 1
