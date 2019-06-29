@@ -275,34 +275,8 @@ class Lld(object):
             chapter_index += 1
 
         exercises_list = course_data["exerciseFiles"]
-        if exercises_list:
-            self.print_log("green", "[*] --- Downloading exercise files")
-            for exercise in exercises_list:
-                try:
-                    ex_name = exercise["name"]
-                    ex_url = exercise["url"]
-                except (KeyError, IndexError):
-                    self.print_log(
-                        "default",
-                        "[!] --- Can't download an exercise file "
-                        "for course [{}]".format(course_name),
-                    )
-                else:
-                    exercise_path = "{}/{}".format(course_path, ex_name)
-                    if os.path.exists(exercise_path):
-                        self.print_log(
-                            "blue",
-                            "[*] ------ Skip exercise file [{}] download "
-                            "because it already exists.".format(ex_name),
-                        )
-                        continue
-                    self.print_log(
-                        "magenta",
-                        "[*] ------ Downloading exercise file [{}]".format(ex_name),
-                    )
-                    self.download_file(ex_url, course_path, ex_name)
-        else:
-            self.print_log("gray", "[*] --- No exercise files available")
+        self.print_log("green", "[*] --- Downloading exercise files")
+        self.download_exercise(exercises_list, course_name, course_path)
 
         description = course_data["description"]
         self.print_log("green", "[*] --- Downloading course description")
@@ -395,6 +369,35 @@ class Lld(object):
                     chapter_path,
                     "{} - {}.srt".format(str(video_index).zfill(2), video_name),
                 )
+
+    def download_exercise(self, exercises_list, course_name, course_path):
+        if exercises_list:
+            for exercise in exercises_list:
+                try:
+                    ex_name = exercise["name"]
+                    ex_url = exercise["url"]
+                except (KeyError, IndexError):
+                    self.print_log(
+                        "default",
+                        "[!] --- Can't download an exercise file "
+                        "for course [{}]".format(course_name),
+                    )
+                else:
+                    exercise_path = "{}/{}".format(course_path, ex_name)
+                    if os.path.exists(exercise_path):
+                        self.print_log(
+                            "blue",
+                            "[*] ------ Skip exercise file [{}] download "
+                            "because it already exists.".format(ex_name),
+                        )
+                        continue
+                    self.print_log(
+                        "magenta",
+                        "[*] ------ Downloading exercise file [{}]".format(ex_name),
+                    )
+                    self.download_file(ex_url, course_path, ex_name)
+        else:
+            self.print_log("gray", "[*] --- No exercise files available")
 
 
 def main():
