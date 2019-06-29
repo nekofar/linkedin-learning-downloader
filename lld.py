@@ -110,7 +110,7 @@ class Lld(object):
         seconds, milliseconds = divmod(ms, 1000)
         minutes, seconds = divmod(seconds, 60)
         hours, minutes = divmod(minutes, 60)
-        return "{:d}:{:2d}:{:2d},{:2d}".format(hours, minutes, seconds, milliseconds)
+        return u"{:d}:{:2d}:{:2d},{:2d}".format(hours, minutes, seconds, milliseconds).encode('utf8')
 
     @staticmethod
     def print_log(color, data):
@@ -120,12 +120,12 @@ class Lld(object):
         :param color:
         :param data:
         """
-        print "[{}]{}{}{}".format(
+        print u"[{}]{}{}{}".format(
             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             COLORS[color],
             str(data),
             COLORS["default"],
-        )
+        ).encode('utf8')
 
     def download_file(self, url, path, file_name):
         """
@@ -188,13 +188,13 @@ class Lld(object):
                 else:
                     t_end = subs[i]["transcriptStartAt"]
                 caption = sub["caption"]
-                file_object.write("{}\n".format(str(i)))
+                file_object.write(u"{}\n".format(str(i)).encode('utf8'))
                 file_object.write(
-                    "{} --> {}\n".format(
+                    u"{} --> {}\n".format(
                         self.format_time(t_start), self.format_time(t_end)
-                    )
+                    ).encode('utf8')
                 )
-                file_object.write("{}\n\n".format(caption))
+                file_object.write(u"{}\n\n".format(caption).encode('utf8'))
                 i += 1
 
     @staticmethod
