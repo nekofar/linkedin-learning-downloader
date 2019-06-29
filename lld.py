@@ -155,7 +155,7 @@ class Lld(object):
                         total / 1e6,
                     ),
                     bar_format="{desc}: {percentage:2.0f}% | {elapsed}, {rate_fmt}"
-                               + COLORS["default"],
+                    + COLORS["default"],
                     total=total,
                     ncols=100,
                     leave=False,
@@ -288,6 +288,18 @@ class Lld(object):
                         "for course [{}]".format(course_name),
                     )
                 else:
+                    exercise_path = "{}/{}".format(course_path, ex_name)
+                    if os.path.exists(exercise_path):
+                        self.print_log(
+                            "blue",
+                            "[*] ------ Skip exercise file [{}] download "
+                            "because it already exists.".format(ex_name),
+                        )
+                        continue
+                    self.print_log(
+                        "magenta",
+                        "[*] ------ Downloading exercise file [{}]".format(ex_name),
+                    )
                     self.download_file(ex_url, course_path, ex_name)
         else:
             self.print_log("gray", "[*] --- No exercise files available")
@@ -350,9 +362,7 @@ class Lld(object):
                 "because it already exists.".format(video_name),
             )
             return
-        video_data = self.session.get(
-            VIDEO_API_URL.format(course, video_slug)
-        )
+        video_data = self.session.get(VIDEO_API_URL.format(course, video_slug))
         try:
             video_url = re.search(
                 '"progressiveUrl":"(.+)","streamingUrl"', video_data.text
