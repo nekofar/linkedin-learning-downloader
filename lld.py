@@ -17,29 +17,29 @@ import config
 
 reload(sys)
 
-
-BASE_URL = "https://www.linkedin.com"
-
-LOGIN_URL = "{}/login"
-POST_LOGIN_URL = "{}/uas/login-submit"
+LOGIN_URL = "https://www.linkedin.com/login"
+POST_LOGIN_URL = "https://www.linkedin.com/uas/login-submit"
 COURSE_API_URL = (
-    "{}/learning-api/detailedCourses?fields=fullCourseUnlocked,releasedOn,exerciseFileUrls,exerciseFiles"
-    "&addParagraphsToTranscript=true&courseSlug={}&q=slugs"
+    "https://www.linkedin.com/learning-api/detailedCourses"
+    "??fields=fullCourseUnlocked,releasedOn,"
+    "exerciseFileUrls,exerciseFiles&addParagraphsToTranscript=true&courseSlug={}&q=slugs"
 )
 VIDEO_API_URL = (
-    "{}/learning-api/detailedCourses?addParagraphsToTranscript=false"
-    "&courseSlug={}&q=slugs&resolution=_720&videoSlug={}"
+    "https://www.linkedin.com/learning-api/detailedCourses"
+    "?addParagraphsToTranscript=false&courseSlug={}"
+    "&q=slugs&resolution=_720&videoSlug={}"
 )
 HEADERS = {
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
+    "image/webp,image/apng,*/*;q=0.8",
     "Accept-Encoding": "gzip, deflate, br",
     "Accept-Language": "en-US,en;q=0.9",
     "Connection": "keep-alive",
     "Content-Type": "application/x-www-form-urlencoded",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36(KHTML, like Gecko)  "
-    "Chrome/66.0.3359.181 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    " (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36",
 }
+
 COLORS = {
     "black": "\033[30m",
     "red": "\033[31m",
@@ -54,11 +54,7 @@ COLORS = {
 }
 
 
-class LLD(object):
-    """
-
-    """
-
+class Lld(object):
     def __init__(self):
         self.session = Session()
         self.base_path = (
@@ -105,13 +101,13 @@ class LLD(object):
         return raw_string[i:]
 
     @staticmethod
-    def format_time(mill):
+    def format_time(ms):
         """
 
-        :param mill:
+        :param ms:
         :return:
         """
-        seconds, milliseconds = divmod(mill, 1000)
+        seconds, milliseconds = divmod(ms, 1000)
         minutes, seconds = divmod(seconds, 60)
         hours, minutes = divmod(minutes, 60)
         return "{:d}:{:2d}:{:2d},{:2d}".format(hours, minutes, seconds, milliseconds)
@@ -221,10 +217,7 @@ class LLD(object):
         Login to the LinkedIn using login data and initialize session
         """
         self.print_log("cyan", "[*] Authenticating to LinkedIn")
-        login_page = BeautifulSoup(
-            self.session.get(LOGIN_URL.format(BASE_URL)).text,
-            "html.parser",
-        )
+        login_page = BeautifulSoup(self.session.get(LOGIN_URL).text, "html.parser")
         csrf = login_page.find("input", {"name": "loginCsrfParam"})["value"]
         self.print_log("cyan", "[*] Csfr token: {}".format(csrf))
         login_data = urllib.urlencode(
@@ -239,11 +232,7 @@ class LLD(object):
             requests.utils.dict_from_cookiejar(self.session.cookies)
         )
         self.session.headers.update(HEADERS)
-        resp = self.session.post(
-            POST_LOGIN_URL.format(BASE_URL),
-            data=login_data,
-            allow_redirects=True,
-        )
+        resp = self.session.post(POST_LOGIN_URL, data=login_data, allow_redirects=True)
         if resp.status_code != 200:
             self.print_log("red", "[!] Could not authenticate to LinkedIn")
         else:
@@ -252,6 +241,7 @@ class LLD(object):
     def download_courses(self):
         """
         Download courses videos and files
+
         """
         token = self.session.cookies.get("JSESSIONID").replace('"', "")
         self.session.headers["Csrf-Token"] = token
@@ -266,9 +256,10 @@ class LLD(object):
     def download_course(self, course):
         """
         Download an individual course
+
         :param course:
         """
-        resp = self.session.get(COURSE_API_URL.format(BASE_URL, course))
+        resp = self.session.get(COURSE_API_URL.format(course))
         course_data = resp.json()["elements"][0]
         course_name = self.format_string(course_data["title"])
         self.print_log(
@@ -360,7 +351,7 @@ class LLD(object):
             )
             return
         video_data = self.session.get(
-            VIDEO_API_URL.format(BASE_URL, course, video_slug)
+            VIDEO_API_URL.format(course, video_slug)
         )
         try:
             video_url = re.search(
@@ -400,7 +391,7 @@ def main():
     """
 
     """
-    lld = LLD()
+    lld = Lld()
     lld.get_logged_session()
     lld.download_courses()
 
