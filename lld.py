@@ -29,6 +29,11 @@ VIDEO_API_URL = (
     "?addParagraphsToTranscript=false&courseSlug={}"
     "&q=slugs&resolution=_720&videoSlug={}"
 )
+SEARCH_API_URL = (
+    "https://www.linkedin.com/learning-api/search"
+    "?sortBy=%s&categorySlugs=List(%s)&start=0&includeLearningPaths=true&keywords=%s"
+    "&count=%s&q=search&enableSpellCheck=false&entityType=COURSE"
+)
 HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
     "image/webp,image/apng,*/*;q=0.8",
@@ -417,6 +422,33 @@ class Lld(object):
         else:
             self.print_log("gray", "[*] --- No exercise files available")
 
+    def search_courses(
+        self, keywords="wordpress", sort="RECENCY", category="technology", limit=10
+    ):
+        """
+
+        :param limit:
+        :param category: technology|creative|business
+        :param keywords:
+        :param sort: RELEVANCE|RECENCY
+        """
+        token = self.session.cookies.get("JSESSIONID").replace('"', "")
+        self.session.headers["Csrf-Token"] = token
+        self.session.headers["Cookie"] = self.plain_cookies(
+            requests.utils.dict_from_cookiejar(self.session.cookies)
+        )
+        self.session.headers.pop("Accept")
+        resp = self.session.get(url=SEARCH_API_URL % (sort, category, keywords, limit))
+        search_data = resp.json()["elements"]
+        for course in search_data:
+            title = course["hitInfo"]["com.linkedin.learning.api.search.SearchCourse"][
+                "course"
+            ]["title"]
+            slug = course["hitInfo"]["com.linkedin.learning.api.search.SearchCourse"][
+                "course"
+            ]["slug"]
+            print slug
+
 
 def main():
     """
@@ -424,6 +456,7 @@ def main():
     """
     lld = Lld()
     lld.get_logged_session()
+    # lld.search_courses()
     lld.download_courses()
 
 
