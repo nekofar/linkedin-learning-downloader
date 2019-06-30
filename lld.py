@@ -141,12 +141,17 @@ class Lld(object):
         :param path:
         :param file_name:
         """
-        resp = self.session.get(url, stream=True)
-        total = int(resp.headers["Content-Length"])
         if not os.path.exists(path):
             os.makedirs(path)
+
+        temp_file = path + "/" + file_name + ".tmp"
+        main_file = path + "/" + file_name
+
+        resp = self.session.get(url, stream=True)
+        total = int(resp.headers["Content-Length"])
+
         try:
-            with open(path + "/" + file_name, "wb") as file_object:
+            with open(temp_file, "wb") as file_object:
                 with tqdm(
                     desc=u"[{}]{}[*] ------ Downloading {:0.2f}Mb".format(
                         datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -169,8 +174,9 @@ class Lld(object):
                         if chunk:
                             file_object.write(chunk)
                             progress.update(1024)
+            os.rename(temp_file, main_file)
         except Exception as err:
-            os.remove(path + "/" + file_name)
+            os.remove(temp_file)
             self.print_log("red", err)
 
     def download_sub(self, subs, path, file_name):
