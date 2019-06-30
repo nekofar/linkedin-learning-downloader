@@ -163,7 +163,7 @@ class Lld(object):
                     unit="b",
                     unit_scale=True,
                     unit_divisor=1e6,
-                    smoothing=0.1
+                    mininterval=1
                 ) as progress:
                     for chunk in resp.iter_content(chunk_size=1024):
                         if chunk:
@@ -423,7 +423,7 @@ class Lld(object):
             self.print_log("gray", "[*] --- No exercise files available")
 
     def search_courses(
-        self, keywords="wordpress", sort="RECENCY", category="technology", limit=10
+        self, keywords="", sort="RECENCY", category="technology", limit=10
     ):
         """
 
