@@ -147,7 +147,7 @@ class Lld(object):
         temp_file = path + "/" + file_name + ".tmp"
         main_file = path + "/" + file_name
 
-        resp = self.session.get(url, stream=True)
+        resp = self.session.get(url, stream=True, timeout=60)
         total = int(resp.headers["Content-Length"])
 
         try:
