@@ -110,7 +110,9 @@ class Lld(object):
         seconds, milliseconds = divmod(ms, 1000)
         minutes, seconds = divmod(seconds, 60)
         hours, minutes = divmod(minutes, 60)
-        return u"{:d}:{:2d}:{:2d},{:2d}".format(hours, minutes, seconds, milliseconds).encode('utf8')
+        return u"{:d}:{:2d}:{:2d},{:2d}".format(
+            hours, minutes, seconds, milliseconds
+        ).encode("utf8")
 
     @staticmethod
     def print_log(color, data):
@@ -125,7 +127,7 @@ class Lld(object):
             COLORS[color],
             str(data),
             COLORS["default"],
-        ).encode('utf8')
+        ).encode("utf8")
 
     def download_file(self, url, path, file_name):
         """
@@ -134,12 +136,6 @@ class Lld(object):
         :param path:
         :param file_name:
         """
-        if "".join(file_name.split(".")[1:]) == "mp4":
-            color = "magenta"
-            indent = "-" * 6
-        else:
-            color = "green"
-            indent = "-" * 3
         resp = self.session.get(url, stream=True)
         total = int(resp.headers["Content-Length"])
         if not os.path.exists(path):
@@ -147,21 +143,22 @@ class Lld(object):
         try:
             with open(path + "/" + file_name, "wb") as file_object:
                 with tqdm(
-                    desc="[{}]{}[*] {} {} {:0.2f}Mb".format(
+                    desc=u"[{}]{}[*] ------ Downloading {:0.2f}Mb".format(
                         datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        COLORS[color],
-                        indent,
-                        "Downloading",
+                        COLORS["magenta"],
                         total / 1e6,
-                    ),
-                    bar_format="{desc}: {percentage:2.0f}% | {elapsed}, {rate_fmt}"
-                    + COLORS["default"],
+                    ).encode("utf8"),
+                    bar_format=u"{desc}: {percentage:2.0f}% | {elapsed}, {rate_fmt}".encode(
+                        "utf8"
+                    )
+                    + (COLORS["default"]),
                     total=total,
                     ncols=100,
                     leave=False,
                     unit="b",
                     unit_scale=True,
                     unit_divisor=1e6,
+                    smoothing=0.1
                 ) as progress:
                     for chunk in resp.iter_content(chunk_size=1024):
                         if chunk:
@@ -188,13 +185,13 @@ class Lld(object):
                 else:
                     t_end = subs[i]["transcriptStartAt"]
                 caption = sub["caption"]
-                file_object.write(u"{}\n".format(str(i)).encode('utf8'))
+                file_object.write(u"{}\n".format(str(i)).encode("utf8"))
                 file_object.write(
                     u"{} --> {}\n".format(
                         self.format_time(t_start), self.format_time(t_end)
-                    ).encode('utf8')
+                    ).encode("utf8")
                 )
-                file_object.write(u"{}\n\n".format(caption).encode('utf8'))
+                file_object.write(u"{}\n\n".format(caption).encode("utf8"))
                 i += 1
 
     @staticmethod
@@ -225,7 +222,7 @@ class Lld(object):
         cover_path = path + "/" + file_name
         resp = self.session.get(thumbnail, stream=True)
         if resp.status_code == 200:
-            with open(cover_path, 'wb') as file_object:
+            with open(cover_path, "wb") as file_object:
                 for chunk in resp:
                     file_object.write(chunk)
 
@@ -291,9 +288,9 @@ class Lld(object):
             self.download_chapter(course, chapter, course_path, chapter_index)
             chapter_index += 1
 
-        thumbnail = course_data['webThumbnail']
+        thumbnail = course_data["webThumbnail"]
         self.print_log("green", "[*] --- Downloading course cover")
-        self.download_cover(thumbnail, course_path, 'Cover.jpg')
+        self.download_cover(thumbnail, course_path, "Cover.jpg")
 
         exercises_list = course_data["exerciseFiles"]
         self.print_log("green", "[*] --- Downloading exercise files")
