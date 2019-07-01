@@ -3,13 +3,14 @@
 A scraping tool that downloads video lessons from Linkedin Learning
 """
 
-import urllib
 import sys
 import re
 import os
 import string
 import datetime
 import signal
+import argparse
+import urllib
 import requests
 from requests import Session
 from requests.exceptions import ConnectionError
@@ -97,7 +98,7 @@ class Lld(object):
             u"ü": "ue",
             ":": " -",
         }
-        invalid_chars = r"[^A-Za-z0-9\-\.\+\#\']+"
+        invalid_chars = r"[^A-Za-z0-9\.\-\+\#\'\,]+"
         u_map = {ord(key): unicode(val) for key, val in replacement_dict.items()}
         raw_string = raw_string.translate(u_map)
         raw_string = re.sub(invalid_chars, " ", raw_string).strip().encode("utf-8")
@@ -451,24 +452,35 @@ class Lld(object):
         self.session.headers.pop("Accept")
         resp = self.session.get(url=SEARCH_API_URL % (sort, category, keywords, limit))
         search_data = resp.json()["elements"]
+        search_course = "com.linkedin.learning.api.search.SearchCourse"
         for course in search_data:
-            title = course["hitInfo"]["com.linkedin.learning.api.search.SearchCourse"][
-                "course"
-            ]["title"]
-            slug = course["hitInfo"]["com.linkedin.learning.api.search.SearchCourse"][
-                "course"
-            ]["slug"]
-            print slug
+            title = course["hitInfo"][search_course]["course"]["title"]
+            slug = course["hitInfo"][search_course]["course"]["slug"]
+            print "{}'{}', # {}".format(' '*4, slug, title)
 
 
 def main():
     """
 
     """
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-a", "--action", required=False, help="action", default="download")
+    ap.add_argument("-s", "--keyword", required=False, help="keywords", default="")
+    ap.add_argument("-o", "--sort", required=False, help="sort", default="RECENCY")
+    ap.add_argument("-c", "--category", required=False, help="category", default="technology")
+    ap.add_argument("-l", "--limit", required=False, help="limit", default=10)
+
+    args = ap.parse_args()
+
     lld = Lld()
     lld.get_logged_session()
-    # lld.search_courses()
-    lld.download_courses()
+
+    if args.action == 'download':
+        lld.download_courses()
+    elif args.action == 'search':
+        print "\n"
+        lld.search_courses(keywords=args.keyword, sort=args.sort, category=args.category, limit=args.limit)
+        print "\n"
 
 
 if __name__ == "__main__":
