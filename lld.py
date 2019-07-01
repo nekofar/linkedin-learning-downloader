@@ -180,6 +180,7 @@ class Lld(object):
                             progress.update(1024)
             os.rename(temp_file, main_file)
         except ConnectionError as err:
+            self.get_logged_session()
             self.download_courses()
         except Exception as err:
             os.remove(temp_file)
