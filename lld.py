@@ -9,6 +9,7 @@ import re
 import os
 import string
 import datetime
+import signal
 import requests
 from requests import Session
 from bs4 import BeautifulSoup
@@ -16,6 +17,7 @@ from tqdm import tqdm
 import config
 
 reload(sys)
+signal.signal(signal.SIGINT, lambda number, frame: sys.exit())
 
 LOGIN_URL = "https://www.linkedin.com/login"
 POST_LOGIN_URL = "https://www.linkedin.com/uas/login-submit"
