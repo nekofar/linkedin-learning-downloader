@@ -12,6 +12,7 @@ import datetime
 import signal
 import requests
 from requests import Session
+from requests.exceptions import ConnectionError
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 import config
@@ -177,6 +178,8 @@ class Lld(object):
                             file_object.write(chunk)
                             progress.update(1024)
             os.rename(temp_file, main_file)
+        except ConnectionError as err:
+            self.download_courses()
         except Exception as err:
             os.remove(temp_file)
             self.print_log("red", err)
