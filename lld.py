@@ -457,7 +457,7 @@ class Lld(object):
         for course in search_data:
             title = course["hitInfo"][search_course]["course"]["title"]
             slug = course["hitInfo"][search_course]["course"]["slug"]
-            print "{}'{}', # {}".format(' '*4, slug, title)
+            print "{}'{}', # {}".format(" " * 4, slug, title)
 
 
 def main():
@@ -465,22 +465,27 @@ def main():
 
     """
     ap = argparse.ArgumentParser()
-    ap.add_argument("-a", "--action", required=False, help="action", default="download")
-    ap.add_argument("-s", "--keyword", required=False, help="keywords", default="")
-    ap.add_argument("-o", "--sort", required=False, help="sort", default="RECENCY")
-    ap.add_argument("-c", "--category", required=False, help="category", default="technology")
-    ap.add_argument("-l", "--limit", required=False, help="limit", default=10)
+    ap.add_argument("-a", "--action", help="action", default="download")
+    ap.add_argument("-s", "--keyword", help="keywords", default="")
+    ap.add_argument("-o", "--sort", help="sort", default="RECENCY")
+    ap.add_argument("-c", "--category", help="category", default="technology")
+    ap.add_argument("-l", "--limit", help="limit", default=10)
 
     args = ap.parse_args()
 
     lld = Lld()
     lld.get_logged_session()
 
-    if args.action == 'download':
+    if args.action == "download":
         lld.download_courses()
-    elif args.action == 'search':
+    elif args.action == "search":
         print "\n"
-        lld.search_courses(keywords=args.keyword, sort=args.sort, category=args.category, limit=args.limit)
+        lld.search_courses(
+            keywords=args.keyword,
+            sort=args.sort,
+            category=args.category,
+            limit=args.limit,
+        )
         print "\n"
 
 
