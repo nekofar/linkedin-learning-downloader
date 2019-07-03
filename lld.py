@@ -49,7 +49,7 @@ HEADERS = {
     " (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36",
 }
 
-COLORS = {
+LOG_COLORS = {
     "black": "\033[30m",
     "red": "\033[31m",
     "green": "\033[32m",
@@ -133,9 +133,9 @@ class Lld(object):
         """
         print u"[{}]{}{}{}".format(
             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            COLORS[color],
+            LOG_COLORS[color],
             str(data),
-            COLORS["default"],
+            LOG_COLORS["default"],
         ).encode("utf8")
 
     def download_file(self, url, path, file_name):
@@ -156,11 +156,11 @@ class Lld(object):
 
         desc = "[{}]{}[*] ------ Downloading {:0.2f}Mb".format(
             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            COLORS["magenta"],
+            LOG_COLORS["magenta"],
             total / 1e6,
         )
         bar_format = "{desc}: {percentage:2.0f}% | {elapsed}, {rate_fmt}" + (
-            COLORS["default"]
+            LOG_COLORS["default"]
         )
 
         try:
