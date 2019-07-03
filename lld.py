@@ -154,18 +154,20 @@ class Lld(object):
         resp = self.session.get(url, stream=True, timeout=60)
         total = int(resp.headers["Content-Length"])
 
+        desc = "[{}]{}[*] ------ Downloading {:0.2f}Mb".format(
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            COLORS["magenta"],
+            total / 1e6,
+        )
+        bar_format = "{desc}: {percentage:2.0f}% | {elapsed}, {rate_fmt}" + (
+            COLORS["default"]
+        )
+
         try:
             with open(temp_file, "wb") as file_object:
                 with tqdm(
-                    desc=u"[{}]{}[*] ------ Downloading {:0.2f}Mb".format(
-                        datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        COLORS["magenta"],
-                        total / 1e6,
-                    ).encode("utf8"),
-                    bar_format=u"{desc}: {percentage:2.0f}% | {elapsed}, {rate_fmt}".encode(
-                        "utf8"
-                    )
-                    + (COLORS["default"]),
+                    desc=desc,
+                    bar_format=bar_format,
                     total=total,
                     ncols=100,
                     leave=False,
@@ -360,10 +362,8 @@ class Lld(object):
         """
         video_name = self.format_string(video["title"])
         video_slug = video["slug"]
-        video_path = (
-            chapter_path
-            + "/"
-            + "{} - {}.mp4".format(str(video_index).zfill(2), video_name)
+        video_path = "{}/{} - {}.mp4".format(
+            chapter_path, str(video_index).zfill(2), video_name
         )
         if os.path.exists(video_path):
             self.print_log(
