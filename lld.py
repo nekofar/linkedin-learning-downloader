@@ -11,6 +11,7 @@ import datetime
 import signal
 import argparse
 import urllib
+import pickle
 import requests
 from requests import Session
 from requests.exceptions import ConnectionError
@@ -65,7 +66,8 @@ LOG_COLORS = {
 
 class Lld(object):
     def __init__(self):
-        self.session = Session()
+        self.session = None
+        self.session_file = os.path.join(os.path.dirname(__file__), "session.dat")
         self.base_path = (
             config.BASE_DOWNLOAD_PATH if config.BASE_DOWNLOAD_PATH else "out"
         )
@@ -181,7 +183,7 @@ class Lld(object):
                             file_object.write(chunk)
                             progress.update(1024)
             os.rename(temp_file, main_file)
-        except ConnectionError as err:
+        except ConnectionError:
             self.get_logged_session()
             self.download_courses()
         except Exception as err:
@@ -251,26 +253,44 @@ class Lld(object):
         Login to the LinkedIn using login data and initialize session
         """
         self.print_log("cyan", "[*] Authenticating to LinkedIn")
-        login_page = BeautifulSoup(self.session.get(LOGIN_URL).text, "html.parser")
-        csrf = login_page.find("input", {"name": "loginCsrfParam"})["value"]
-        self.print_log("cyan", "[*] Csfr token: {}".format(csrf))
-        login_data = urllib.urlencode(
-            {
-                "session_key": config.USERNAME,
-                "session_password": config.PASSWORD,
-                "isJsEnabled": "false",
-                "loginCsrfParam": csrf,
-            }
+        time = (
+            datetime.datetime.fromtimestamp(os.path.getmtime(self.session_file))
+            if os.path.exists(self.session_file)
+            else datetime.datetime.now()
         )
-        HEADERS["Cookie"] = self.plain_cookies(
-            requests.utils.dict_from_cookiejar(self.session.cookies)
-        )
-        self.session.headers.update(HEADERS)
-        resp = self.session.post(POST_LOGIN_URL, data=login_data, allow_redirects=True)
-        if resp.status_code != 200:
-            self.print_log("red", "[!] Could not authenticate to LinkedIn")
+        diff = (datetime.datetime.now() - time).seconds
+
+        if diff and diff < (24 * 60 * 60):
+            with open(self.session_file, "rb") as file_object:
+                self.session = pickle.load(file_object)
+            self.print_log("cyan", "[*] Authentication using cached session completed")
         else:
-            self.print_log("cyan", "[*] Authentication successfully completed")
+            self.session = Session()
+            login_page = BeautifulSoup(self.session.get(LOGIN_URL).text, "html.parser")
+            csrf = login_page.find("input", {"name": "loginCsrfParam"})["value"]
+            self.print_log("cyan", "[*] Csfr token: {}".format(csrf))
+            login_data = urllib.urlencode(
+                {
+                    "session_key": config.USERNAME,
+                    "session_password": config.PASSWORD,
+                    "isJsEnabled": "false",
+                    "loginCsrfParam": csrf,
+                }
+            )
+            HEADERS["Cookie"] = self.plain_cookies(
+                requests.utils.dict_from_cookiejar(self.session.cookies)
+            )
+            self.session.headers.update(HEADERS)
+
+            resp = self.session.post(
+                POST_LOGIN_URL, data=login_data, allow_redirects=True
+            )
+            if resp.status_code != 200:
+                self.print_log("red", "[!] Could not authenticate to LinkedIn")
+            else:
+                self.print_log("cyan", "[*] Authentication using live session completed")
+                with open(self.session_file, "wb") as file_object:
+                    pickle.dump(self.session, file_object)
 
     def download_courses(self):
         """
@@ -294,7 +314,11 @@ class Lld(object):
         :param course:
         """
         resp = self.session.get(COURSE_API_URL.format(course))
-        course_data = resp.json()["elements"][0]
+        try:
+            course_data = resp.json()["elements"][0]
+        except KeyError:
+            sys.exit(resp.text)
+
         course_name = self.format_string(course_data["title"])
         self.print_log(
             "yellow", "[*] Starting download of course [{}]...".format(course_name)
@@ -445,14 +469,20 @@ class Lld(object):
         :param keywords:
         :param sort: RELEVANCE|RECENCY
         """
+
         token = self.session.cookies.get("JSESSIONID").replace('"', "")
         self.session.headers["Csrf-Token"] = token
         self.session.headers["Cookie"] = self.plain_cookies(
             requests.utils.dict_from_cookiejar(self.session.cookies)
         )
         self.session.headers.pop("Accept")
-        resp = self.session.get(url=SEARCH_API_URL % (sort, category, keywords, limit))
-        search_data = resp.json()["elements"]
+
+        resp = self.session.get(url=SEARCH_API_URL % (sort, category, urllib.quote(keywords), limit))
+        try:
+            search_data = resp.json()["elements"]
+        except KeyError:
+            sys.exit(resp.text)
+
         search_course = "com.linkedin.learning.api.search.SearchCourse"
         for course in search_data:
             title = course["hitInfo"][search_course]["course"]["title"]
@@ -479,14 +509,12 @@ def main():
     if args.action == "download":
         lld.download_courses()
     elif args.action == "search":
-        print "\n"
         lld.search_courses(
             keywords=args.keyword,
             sort=args.sort,
             category=args.category,
             limit=args.limit,
         )
-        print "\n"
 
 
 if __name__ == "__main__":

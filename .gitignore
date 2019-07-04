@@ -195,3 +195,4 @@ dmypy.json
 
 /tmp/
 config.py
+/session.dat
