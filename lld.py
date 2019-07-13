@@ -306,6 +306,7 @@ class Lld(object):
 
         for course in config.COURSES:
             self.download_course(course)
+            config.COURSES.pop(0)
 
     def download_course(self, course):
         """
