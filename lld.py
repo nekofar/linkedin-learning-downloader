@@ -36,8 +36,9 @@ VIDEO_API_URL = (
 )
 SEARCH_API_URL = (
     "https://www.linkedin.com/learning-api/search"
-    "?sortBy=%s&categorySlugs=List(%s)&start=0&includeLearningPaths=true&keywords=%s"
-    "&count=%s&q=search&enableSpellCheck=false&entityType=COURSE"
+    "?sortBy={}&categorySlugs=List({})&keywords={}&count={}&start=0" 
+    "&enableSpellCheck=false&includeLearningPaths=false&boostEditorPicks=false&useV2Facets=false"
+    "&entityType=COURSE&q=search"
 )
 HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
@@ -478,7 +479,7 @@ class Lld(object):
         )
         self.session.headers.pop("Accept")
 
-        resp = self.session.get(url=SEARCH_API_URL % (sort, category, urllib.quote(keywords), limit))
+        resp = self.session.get(url=SEARCH_API_URL.format(sort, category, urllib.quote(keywords), limit))
         try:
             search_data = resp.json()["elements"]
         except KeyError:
