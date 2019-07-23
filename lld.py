@@ -7,12 +7,12 @@ import sys
 import re
 import os
 import string
-import datetime
 import signal
 import argparse
 import urllib
 import pickle
 import requests
+from datetime import datetime
 from requests import Session
 from requests.exceptions import ConnectionError
 from bs4 import BeautifulSoup
@@ -36,19 +36,19 @@ VIDEO_API_URL = (
 )
 SEARCH_API_URL = (
     "https://www.linkedin.com/learning-api/search"
-    "?sortBy={}&categorySlugs=List({})&keywords={}&count={}&start=0" 
+    "?sortBy={}&categorySlugs=List({})&keywords={}&count={}&start=0"
     "&enableSpellCheck=false&includeLearningPaths=false&boostEditorPicks=false&useV2Facets=false"
     "&entityType=COURSE&q=search"
 )
 HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
-    "image/webp,image/apng,*/*;q=0.8",
+              "image/webp,image/apng,*/*;q=0.8",
     "Accept-Encoding": "gzip, deflate, br",
     "Accept-Language": "en-US,en;q=0.9",
     "Connection": "keep-alive",
     "Content-Type": "application/x-www-form-urlencoded",
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    " (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36",
+                  " (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36",
 }
 
 LOG_COLORS = {
@@ -135,7 +135,7 @@ class Lld(object):
         :param data:
         """
         print u"[{}]{}{}{}".format(
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             LOG_COLORS[color],
             str(data),
             LOG_COLORS["default"],
@@ -158,7 +158,7 @@ class Lld(object):
         total = int(resp.headers["Content-Length"])
 
         desc = "[{}]{}[*] ------ Downloading {:0.2f}Mb".format(
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             LOG_COLORS["magenta"],
             total / 1e6,
         )
@@ -169,15 +169,15 @@ class Lld(object):
         try:
             with open(temp_file, "wb") as file_object:
                 with tqdm(
-                    desc=desc,
-                    bar_format=bar_format,
-                    total=total,
-                    ncols=100,
-                    leave=False,
-                    unit="b",
-                    unit_scale=True,
-                    unit_divisor=1e6,
-                    mininterval=1,
+                        desc=desc,
+                        bar_format=bar_format,
+                        total=total,
+                        ncols=100,
+                        leave=False,
+                        unit="b",
+                        unit_scale=True,
+                        unit_divisor=1e6,
+                        mininterval=1,
                 ) as progress:
                     for chunk in resp.iter_content(chunk_size=1024):
                         if chunk:
@@ -255,11 +255,11 @@ class Lld(object):
         """
         self.print_log("cyan", "[*] Authenticating to LinkedIn")
         time = (
-            datetime.datetime.fromtimestamp(os.path.getmtime(self.session_file))
+            datetime.fromtimestamp(os.path.getmtime(self.session_file))
             if os.path.exists(self.session_file)
-            else datetime.datetime.now()
+            else datetime.now()
         )
-        diff = (datetime.datetime.now() - time).seconds
+        diff = (datetime.now() - time).seconds
 
         if diff and diff < (24 * 60 * 60):
             with open(self.session_file, "rb") as file_object:
@@ -307,7 +307,6 @@ class Lld(object):
 
         for course in config.COURSES:
             self.download_course(course)
-            config.COURSES.pop(0)
 
     def download_course(self, course):
         """
@@ -462,7 +461,7 @@ class Lld(object):
             self.print_log("gray", "[*] --- No exercise files available")
 
     def search_courses(
-        self, keywords="", sort="RECENCY", category="technology", limit=10
+            self, keywords="", sort="RECENCY", category="technology", limit=10
     ):
         """
 
@@ -487,9 +486,14 @@ class Lld(object):
 
         search_course = "com.linkedin.learning.api.search.SearchCourse"
         for course in search_data:
-            title = course["hitInfo"][search_course]["course"]["title"]
-            slug = course["hitInfo"][search_course]["course"]["slug"]
-            print "{}'{}', # {}".format(" " * 4, slug, title)
+            course = course["hitInfo"][search_course]["course"]
+
+            time = (course["releasedOn"] if 'updatedAt' not in course else course["updatedAt"])
+            date = datetime.utcfromtimestamp(time / 1000.0).strftime('%Y-%m-%d')
+            title = course["title"]
+            slug = course["slug"]
+
+            print "{}'{}', # {} - {}".format(" " * 4, slug, title, date)
 
 
 def main():
